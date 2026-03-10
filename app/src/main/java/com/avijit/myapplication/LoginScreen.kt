@@ -1,7 +1,9 @@
 package com.avijit.myapplication
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,15 +22,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -39,34 +39,53 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.avijit.myapplication.ui.theme.MyApplicationTheme
 
-// ─── Colour tokens (matches Figma) ──────────────────────────────────────────
-private val ColorBorderLight   = Color(0xFFE0E0E0)
-private val ColorDivider       = Color(0xFFE6E6E6)
-private val ColorHint          = Color(0xFF828282)
-private val ColorSocialBg      = Color(0xFFEEEEEE)
-private val ShapeButton        = RoundedCornerShape(8.dp)
+// ─── String constants (also used by unit tests) ──────────────────────────────
+internal const val LOGIN_SCREEN_TITLE      = "Capgemini DCX"
+internal const val LOGIN_EMAIL_PLACEHOLDER = "email@domain.com"
+
+// ─── Colour tokens (matches Figma node 1:1588) ───────────────────────────────
+private val ColorBgGradientTop    = Color(0xFFCBEFEB)  // light teal  – Figma bg
+private val ColorBgGradientBottom = Color(0xFFFFFFFF)  // white       – Figma bg
+private val ColorBorderLight      = Color(0xFFE0E0E0)
+private val ColorDivider          = Color(0xFFE6E6E6)
+private val ColorHint             = Color(0xFF828282)
+private val ColorSocialBg         = Color(0xFFEEEEEE)
+private val ColorError            = Color(0xFFB00020)  // Material error red
+private val ShapeButton           = RoundedCornerShape(8.dp)
 
 /**
- * BTS-3 — Login / Sign-in screen.
+ * BTS-5 — Login / Sign-in screen.
  *
- * Mirrors the Figma design:
- *  • App name title at top
+ * Mirrors Figma design node 1:1588:
+ *  • Light teal-to-white vertical gradient background
+ *  • App launcher icon + "Capgemini DCX" title at top
  *  • "Create an account" heading + subtitle (vertically centred)
- *  • Email input  →  Continue button
+ *  • Email input  →  Continue button (wired to [LoginViewModel])
+ *  • Inline validation error shown below the field when [LoginUiState.emailError] is set
+ *  • Continue button disabled while [LoginUiState.isLoading]
  *  • "or" divider
  *  • Continue with Google (coloured G logo)
  *  • Continue with Apple  (Apple logo)
  *  • Terms of Service / Privacy Policy footer
+ *
+ * @param viewModel Defaults to a [LoginViewModel] scoped to the nearest
+ *                  [androidx.lifecycle.ViewModelStoreOwner] (Activity/Fragment).
  */
 @Composable
-fun LoginScreen() {
-    var email by remember { mutableStateOf("") }
+fun LoginScreen(viewModel: LoginViewModel = viewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color.White
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(ColorBgGradientTop, ColorBgGradientBottom)
+                )
+            )
     ) {
         Column(
             modifier = Modifier
@@ -75,10 +94,16 @@ fun LoginScreen() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // ── App name ─────────────────────────────────────────────────────
-            Spacer(modifier = Modifier.height(102.dp))
+            // ── App logo + title ──────────────────────────────────────────────
+            Spacer(modifier = Modifier.height(58.dp))
+            Image(
+                painter = painterResource(id = R.mipmap.ic_launcher),
+                contentDescription = "$LOGIN_SCREEN_TITLE logo",
+                modifier = Modifier.size(70.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "App name",
+                text = LOGIN_SCREEN_TITLE,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.Black,
@@ -110,48 +135,65 @@ fun LoginScreen() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── Email input + Continue button ─────────────────────────────────
+            // ── Email input + inline error + Continue button ──────────────────
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    placeholder = {
+                // Field + error message grouped so error sits directly below input
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.email,
+                        onValueChange = { viewModel.onEmailChange(it) },
+                        placeholder = {
+                            Text(
+                                text = LOGIN_EMAIL_PLACEHOLDER,
+                                fontSize = 14.sp,
+                                color = ColorHint
+                            )
+                        },
+                        isError = uiState.emailError != null,
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp),
+                        shape = ShapeButton,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = ColorBorderLight,
+                            focusedBorderColor = Color.Black,
+                            errorBorderColor = ColorError,
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            errorContainerColor = Color.White
+                        ),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+                    )
+                    if (uiState.emailError != null) {
                         Text(
-                            text = "email@domain.com",
-                            fontSize = 14.sp,
-                            color = ColorHint
+                            text = uiState.emailError!!,
+                            color = ColorError,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                         )
-                    },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(40.dp),
-                    shape = ShapeButton,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = ColorBorderLight,
-                        focusedBorderColor = Color.Black,
-                        unfocusedContainerColor = Color.White,
-                        focusedContainerColor = Color.White
-                    ),
-                    textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
-                )
+                    }
+                }
 
                 Button(
-                    onClick = {},
+                    onClick = { viewModel.onContinueClick() },
+                    enabled = !uiState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(40.dp),
                     shape = ShapeButton,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Black,
-                        contentColor = Color.White
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Black.copy(alpha = 0.38f),
+                        disabledContentColor = Color.White.copy(alpha = 0.38f)
                     )
                 ) {
                     Text(
-                        text = "Continue",
+                        text = if (uiState.isLoading) "Loading…" else "Continue",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
