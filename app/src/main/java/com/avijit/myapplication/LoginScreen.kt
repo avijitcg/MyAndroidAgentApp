@@ -1,7 +1,6 @@
 package com.avijit.myapplication
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,8 +27,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -43,12 +42,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.avijit.myapplication.ui.theme.MyApplicationTheme
 
 // ─── String constants (also used by unit tests) ──────────────────────────────
-internal const val LOGIN_SCREEN_TITLE      = "Capgemini DCX"
+internal const val LOGIN_SCREEN_TITLE      = "Capgemini"    // Figma node 1:1618
 internal const val LOGIN_EMAIL_PLACEHOLDER = "email@domain.com"
 
 // ─── Colour tokens (matches Figma node 1:1588) ───────────────────────────────
-private val ColorBgGradientTop    = Color(0xFFCBEFEB)  // light teal  – Figma bg
-private val ColorBgGradientBottom = Color(0xFFFFFFFF)  // white       – Figma bg
 private val ColorBorderLight      = Color(0xFFE0E0E0)
 private val ColorDivider          = Color(0xFFE6E6E6)
 private val ColorHint             = Color(0xFF828282)
@@ -57,11 +54,11 @@ private val ColorError            = Color(0xFFB00020)  // Material error red
 private val ShapeButton           = RoundedCornerShape(8.dp)
 
 /**
- * BTS-5 — Login / Sign-in screen.
+ * BTS-3 — Login / Sign-in screen.
  *
  * Mirrors Figma design node 1:1588:
- *  • Light teal-to-white vertical gradient background
- *  • App launcher icon + "Capgemini DCX" title at top
+ *  • Full-screen [R.drawable.bg_login] background image (white base + object-cover PNG)
+ *  • App launcher icon + "Capgemini" title at top
  *  • "Create an account" heading + subtitle (vertically centred)
  *  • Email input  →  Continue button (wired to [LoginViewModel])
  *  • Inline validation error shown below the field when [LoginUiState.emailError] is set
@@ -78,15 +75,17 @@ private val ShapeButton           = RoundedCornerShape(8.dp)
 fun LoginScreen(viewModel: LoginViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(ColorBgGradientTop, ColorBgGradientBottom)
-                )
-            )
-    ) {
+    // Figma node 1:1588 background: white base + full-screen bg_login.png (object-cover).
+    Box(modifier = Modifier.fillMaxSize()) {
+        // White base layer (visible if image fails to load / during composition)
+        Box(modifier = Modifier.fillMaxSize())
+        // bg_login.png — the teal gradient + geometric shapes from the Figma design
+        Image(
+            painter = painterResource(id = R.drawable.bg_login),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()

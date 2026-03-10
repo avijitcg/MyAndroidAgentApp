@@ -22,8 +22,8 @@ class LoginScreenTest {
     @Test
     fun appTitle_matchesFigmaSpec() {
         assertEquals(
-            "Screen title must match Figma node 1:1588",
-            "Capgemini DCX",
+            "Screen title must match Figma node 1:1618 (BTS-3)",
+            "Capgemini",
             LOGIN_SCREEN_TITLE
         )
     }
