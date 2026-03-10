@@ -97,7 +97,10 @@ fun LoginScreen(viewModel: LoginViewModel = viewModel()) {
             // ── App logo + title ──────────────────────────────────────────────
             Spacer(modifier = Modifier.height(58.dp))
             Image(
-                painter = painterResource(id = R.mipmap.ic_launcher),
+                // R.mipmap.ic_launcher resolves to an <adaptive-icon> XML on API 26+,
+                // which Compose's painterResource() cannot decode (only VectorDrawable
+                // and rasterized assets are supported). Use the rasterized PNG logo instead.
+                painter = painterResource(id = R.drawable.ic_cg_logo),
                 contentDescription = "$LOGIN_SCREEN_TITLE logo",
                 modifier = Modifier.size(70.dp)
             )
