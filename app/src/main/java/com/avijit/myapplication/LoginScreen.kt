@@ -42,7 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.avijit.myapplication.ui.theme.MyApplicationTheme
 
 // ─── String constants (also used by unit tests) ──────────────────────────────
-internal const val LOGIN_SCREEN_TITLE      = "Capgemini DCX"    // Figma node 1:1618
+internal const val LOGIN_SCREEN_TITLE      = "Capgemini DCX App"    // Figma node 1:1618
 internal const val LOGIN_EMAIL_PLACEHOLDER = "email@domain.com"
 
 // ─── Colour tokens (matches Figma node 1:1588) ───────────────────────────────
